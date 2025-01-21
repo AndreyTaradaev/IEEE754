@@ -54,8 +54,10 @@ ull cel(ull k, int p) // целая часть
 
 ull drob(ull k, int p) {
  ull b = k;
-  b <<= 12 + p; // 41=9+32.
-  b >>= 12 + p;
+  if (p >= 0) {
+    b <<= 12 + p; // 41=9+32.
+    b >>= 12 + p;
+  }
   return b;
 }
 
