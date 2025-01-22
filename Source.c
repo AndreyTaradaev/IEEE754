@@ -4,7 +4,11 @@
 
 #include <stdio.h>
 
+#define LEN  1024
+
+
 typedef unsigned long long ull;
+#define COUNT 8
 
 typedef union _myvar {
   ull k;
@@ -15,6 +19,116 @@ typedef union _myvar {
     ull sing : 1;
   };
 } myvar , *pmyvar ;
+
+typedef struct {
+  ull array[COUNT];
+}uint1024_t ;
+
+
+//  вспомогательные
+
+//uint1024_t *shift_right(uint1024_t *v, short shiftcount) {
+//  int128_t result;
+//  result.low = (v.low >> shiftcount) | (v.high << (64 - shiftcount));
+//  result.high = v.high >> shiftcount;
+//  return result;
+//}
+
+uint1024_t *shift_left(uint1024_t *v, short shiftcount);
+
+void clear_1024(uint1024_t *s) {
+  for (size_t i = 1; i < COUNT; i++)
+    s->array[i] = 0;
+}
+
+
+uint1024_t *shift_right(uint1024_t *v, short shiftcount) {
+   if (shiftcount < 0)
+    return shift_left(v, -1 * shiftcount);
+  if (shiftcount > 1023) {
+    clear_1024(v);
+    return v;
+  }
+
+ /*  int128_t result;
+  result.low = (v.low >> shiftcount) | (v.high << (64 - shiftcount));
+  result.high = v.high >> shiftcount;
+  return result;*/
+
+  while (shiftcount > 0) {
+    short tempSchift = shiftcount > 63 ? 63 : shiftcount;
+
+    for (size_t i =  0; i <COUNT-1;
+         i++) { // старшие разр€ды в большем индексе
+      ull t = v->array[i];
+      t = t >> tempSchift; // сдвинули младший Ѕайт
+      ull u = v->array[i +1]; // получили данные старшего байта
+      u = u << (64 - tempSchift);
+      t = t | u;
+      v->array[i] = t;
+    }
+    v->array[COUNT-1] = v->array[COUNT-1] >> tempSchift;
+    shiftcount -= tempSchift;
+  }
+  return v;
+}
+
+
+
+
+
+uint1024_t * set_1024(uint1024_t *s, ull v) {
+  clear_1024(s);
+  s->array[0] = v;
+  return s;
+}
+
+
+uint1024_t *shift_left(uint1024_t *v,  short  shiftcount) {
+  if (shiftcount < 0)
+      return shift_right(v, -1 * shiftcount);
+  if (shiftcount > 1023) {
+    clear_1024(v);
+    return v;
+  }
+  while (shiftcount > 0) {  
+    short tempSchift = shiftcount > 63 ? 63 : shiftcount;
+
+    for (size_t i = COUNT - 1; i > 0;         i--) { // старшие разрады в большем индексе
+      ull t = v->array[i];
+      t = t << tempSchift;   // сдвинули старший байт
+      ull u = v->array[i-1];  //получили данные ьладшего байта 
+      u = u >> (64 - tempSchift); 
+      t = t | u;
+      v->array[i] = t;
+    }
+    v->array[0] = v->array[0] << tempSchift;
+    shiftcount -= tempSchift;
+  }
+  return v;
+  }
+    
+
+
+  //int128_t result;
+
+
+
+/*  result.high = (v.high << shiftcount) | (v.low >> (64 - shiftcount));
+  result.low = v.low << shiftcount;
+  return result;*/
+//}
+
+
+
+
+
+
+
+
+
+
+
 
 void printfBinary(ull v, int len ) {
   if (len <= 0)
@@ -145,6 +259,17 @@ void Variant(double v) {
 
 
 int main() {
+
+
+
+uint1024_t r;
+  clear_1024(&r);
+set_1024(&r, 0xFAFCDE0123);
+  shift_left(&r, 12);
+shift_left(&r, 120);
+  shift_left(&r, -131);
+
+
 
   myvar test ;
   ull mymant = 0x10000000000000;
