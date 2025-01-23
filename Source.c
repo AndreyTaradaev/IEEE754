@@ -8,6 +8,7 @@
 
 
 typedef unsigned long long ull;
+typedef unsigned int ui;
 #define COUNT 8
 
 typedef union _myvar {
@@ -20,8 +21,9 @@ typedef union _myvar {
   };
 } myvar , *pmyvar ;
 
-typedef struct {
+typedef union {
   ull array[COUNT];
+  ui arint[COUNT*2];
 }uint1024_t ;
 
 
@@ -34,7 +36,7 @@ typedef struct {
 //  return result;
 //}
 
-uint1024_t *shift_left(uint1024_t *v, short shiftcount);
+uint1024_t *shift_left_1024(uint1024_t *v, short shiftcount);
 
 void clear_1024(uint1024_t *s) {
   for (size_t i = 1; i < COUNT; i++)
@@ -42,19 +44,13 @@ void clear_1024(uint1024_t *s) {
 }
 
 
-uint1024_t *shift_right(uint1024_t *v, short shiftcount) {
+uint1024_t *shift_right_1024(uint1024_t *v, short shiftcount) {
    if (shiftcount < 0)
-    return shift_left(v, -1 * shiftcount);
+    return shift_left_1024(v, -1 * shiftcount);
   if (shiftcount > 1023) {
     clear_1024(v);
     return v;
   }
-
- /*  int128_t result;
-  result.low = (v.low >> shiftcount) | (v.high << (64 - shiftcount));
-  result.high = v.high >> shiftcount;
-  return result;*/
-
   while (shiftcount > 0) {
     short tempSchift = shiftcount > 63 ? 63 : shiftcount;
 
@@ -84,9 +80,9 @@ uint1024_t * set_1024(uint1024_t *s, ull v) {
 }
 
 
-uint1024_t *shift_left(uint1024_t *v,  short  shiftcount) {
+uint1024_t *shift_left_1024(uint1024_t *v,  short  shiftcount) {
   if (shiftcount < 0)
-      return shift_right(v, -1 * shiftcount);
+      return shift_right_1024(v, -1 * shiftcount);
   if (shiftcount > 1023) {
     clear_1024(v);
     return v;
@@ -107,6 +103,35 @@ uint1024_t *shift_left(uint1024_t *v,  short  shiftcount) {
   }
   return v;
   }
+
+uint1024_t *add_1024(uint1024_t *st, ui v) { 
+   ull res = 0;
+  ui pernos=0;
+  res = (ull)st->arint[0]+v;
+  st->arint[0] = res & 0xFFFFFFFF;
+  pernos = res >> 32;
+
+  for (size_t i = 1; i < COUNT*2; i++) {
+    if (pernos == 0) break;
+     res = st->arint[i] + pernos;
+     st->arint[i] = res & 0xFFFFFFFF;
+     pernos = res >> 32;
+  }
+  return st;
+}
+
+void printBinary_1024(uint1024_t *v, unsigned short len) {
+    if (len > 1023)
+      return;  
+
+    for (int i = len; i >=0; i--) {
+      unsigned short b = i / (sizeof(ull)*8);
+      unsigned short offset = i % (sizeof(ull) * 8);
+      ull printull = v->array[b]; // получаем номер  элемента
+      ull prBt = ((ull)1 << offset); // маска Бита      
+      printf("%c", (printull & prBt) == 0 ? '0' : '1');
+    }
+}
     
 
 
@@ -264,11 +289,18 @@ int main() {
 
 uint1024_t r;
   clear_1024(&r);
-set_1024(&r, 0xFAFCDE0123);
-  shift_left(&r, 12);
-shift_left(&r, 120);
-  shift_left(&r, -131);
+set_1024(&r, 0xFFFFFE0123);
+  shift_left_1024(&r, 12);
+shift_left_1024(&r, 120);
+  printBinary_1024(&r,194);
+  shift_left_1024(&r, -131);
+  printf("\n");
+  printBinary_1024(&r, 64);
 
+  add_1024(&r, 0xFFFFFF);
+  printBinary_1024(&r, 64);
+
+  return 0;
 
 
   myvar test ;
