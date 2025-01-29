@@ -3,15 +3,14 @@
 //
 
 #include <stdio.h>
-
-#define LEN  1024
+#include "array.h"
 
 
 typedef unsigned long long ull;
 typedef unsigned int ui;
-#define COUNT 8
 
-typedef union _myvar {
+
+typedef union _mydouble {
   ull k;
   double fd;
   struct { ///
@@ -19,142 +18,9 @@ typedef union _myvar {
     ull exp : 11;
     ull sing : 1;
   };
-} myvar , *pmyvar ;
+} mydouble , *ptrmydouble ;
 
-typedef union {
-  ull array[COUNT];
-  ui arint[COUNT*2];
-}uint1024_t ;
-
-
-//  вспомогательные
-
-//uint1024_t *shift_right(uint1024_t *v, short shiftcount) {
-//  int128_t result;
-//  result.low = (v.low >> shiftcount) | (v.high << (64 - shiftcount));
-//  result.high = v.high >> shiftcount;
-//  return result;
-//}
-
-uint1024_t *shift_left_1024(uint1024_t *v, short shiftcount);
-
-void clear_1024(uint1024_t *s) {
-  for (size_t i = 1; i < COUNT; i++)
-    s->array[i] = 0;
-}
-
-
-uint1024_t *shift_right_1024(uint1024_t *v, short shiftcount) {
-   if (shiftcount < 0)
-    return shift_left_1024(v, -1 * shiftcount);
-  if (shiftcount > 1023) {
-    clear_1024(v);
-    return v;
-  }
-  while (shiftcount > 0) {
-    short tempSchift = shiftcount > 63 ? 63 : shiftcount;
-
-    for (size_t i =  0; i <COUNT-1;
-         i++) { // старшие разряды в большем индексе
-      ull t = v->array[i];
-      t = t >> tempSchift; // сдвинули младший Байт
-      ull u = v->array[i +1]; // получили данные старшего байта
-      u = u << (64 - tempSchift);
-      t = t | u;
-      v->array[i] = t;
-    }
-    v->array[COUNT-1] = v->array[COUNT-1] >> tempSchift;
-    shiftcount -= tempSchift;
-  }
-  return v;
-}
-
-
-
-
-
-uint1024_t * set_1024(uint1024_t *s, ull v) {
-  clear_1024(s);
-  s->array[0] = v;
-  return s;
-}
-
-
-uint1024_t *shift_left_1024(uint1024_t *v,  short  shiftcount) {
-  if (shiftcount < 0)
-      return shift_right_1024(v, -1 * shiftcount);
-  if (shiftcount > 1023) {
-    clear_1024(v);
-    return v;
-  }
-  while (shiftcount > 0) {  
-    short tempSchift = shiftcount > 63 ? 63 : shiftcount;
-
-    for (size_t i = COUNT - 1; i > 0;         i--) { // старшие разрады в большем индексе
-      ull t = v->array[i];
-      t = t << tempSchift;   // сдвинули старший байт
-      ull u = v->array[i-1];  //получили данные ьладшего байта 
-      u = u >> (64 - tempSchift); 
-      t = t | u;
-      v->array[i] = t;
-    }
-    v->array[0] = v->array[0] << tempSchift;
-    shiftcount -= tempSchift;
-  }
-  return v;
-  }
-
-uint1024_t *add_1024(uint1024_t *st, ui v) { 
-   ull res = 0;
-  ui pernos=0;
-  res = (ull)st->arint[0]+v;
-  st->arint[0] = res & 0xFFFFFFFF;
-  pernos = res >> 32;
-
-  for (size_t i = 1; i < COUNT*2; i++) {
-    if (pernos == 0) break;
-     res = st->arint[i] + pernos;
-     st->arint[i] = res & 0xFFFFFFFF;
-     pernos = res >> 32;
-  }
-  return st;
-}
-
-void printBinary_1024(uint1024_t *v, unsigned short len) {
-    if (len > 1023)
-      return;  
-
-    for (int i = len; i >=0; i--) {
-      unsigned short b = i / (sizeof(ull)*8);
-      unsigned short offset = i % (sizeof(ull) * 8);
-      ull printull = v->array[b]; // получаем номер  элемента
-      ull prBt = ((ull)1 << offset); // маска Бита      
-      printf("%c", (printull & prBt) == 0 ? '0' : '1');
-    }
-}
-    
-
-
-  //int128_t result;
-
-
-
-/*  result.high = (v.high << shiftcount) | (v.low >> (64 - shiftcount));
-  result.low = v.low << shiftcount;
-  return result;*/
-//}
-
-
-
-
-
-
-
-
-
-
-
-
+ 
 void printfBinary(ull v, int len ) {
   if (len <= 0)
     printf("0");
@@ -176,20 +42,7 @@ ull cel(ull k, int p) // целая часть
   return k;
 }
 
-//
-// double pow_neg(int exp) {
-//	double res=1.0;
-//	if (exp == 0) return res;
-//	for (int i = -1; i>=exp ; i--)
-//	{
-//		res /= 2;
-//	}
-//	return res;
-//}
 
-// unsigned long long mantisa(unsigned long long k) {
-//	return  (k & 0x7FFFFFFFFFFFF) | 0x10000000000000;
-// }
 
 ull drob(ull k, int p) {
  ull b = k;
@@ -200,9 +53,9 @@ ull drob(ull k, int p) {
   return b;
 }
 
-unsigned short getSign(ull d) {
+unsigned char getSign(ull d) {
   d >>= 63;
-  return d;
+  return (unsigned char)d;
 }
 
 ull getExp(ull d) { d &= 0x7FF0000000000000;
@@ -287,28 +140,88 @@ int main() {
 
 
 
-uint1024_t r;
-  clear_1024(&r);
-set_1024(&r, 0xFFFFFE0123);
-  shift_left_1024(&r, 12);
-shift_left_1024(&r, 120);
-  printBinary_1024(&r,194);
-  shift_left_1024(&r, -131);
+uint1088_t r;
+  clear_1088(&r);
+set_1088(&r, 0xFFFFFFFFFFFFFFFF);
+  shift_left_1088(&r, 12);
+shift_left_1088(&r, 108);
+  printBinary_1088(&r,194);
+  shift_left_1088(&r, -131);
   printf("\n");
-  printBinary_1024(&r, 64);
+  printBinary_1088(&r, 128);
+  printf("\n");
+  shift_right_1088(&r, -11);
+  printBinary_1088(&r,128);
+  printf("\n");
 
-  add_1024(&r, 0xFFFFFF);
-  printBinary_1024(&r, 64);
+  add_1088(&r, 0xFFFFFF);
+  printBinary_1088(&r, 64);
 
-  return 0;
+    printf("\n\n\n realization\n");
 
 
-  myvar test ;
+  mydouble test ;
   ull mymant = 0x10000000000000;
 
-  test.fd =  -1000000.9;
+  test.fd =  1000000.95;
 
-//  unsigned long long *ptrint = (unsigned long long *)&test.fd;
+    clear_1088(&r);
+  set_1088(&r, test.k);
+    printf("representation double in memory:\t");
+    printBinary_1088(&r, sizeof(unsigned long long) * 8);
+    printf("\n");
+
+    printf("sing -- ");
+    printfBinary(test.sing,1);    
+    printf("\n");
+
+    // характеристика
+    printf("exp -- ");
+    printfBinary(test.exp, 11);
+    printf("\n");
+
+    // мантисса
+    printf("mant -- ");
+    printfBinary(test.mant, 52);
+    printf("\n");
+
+     // сдвиг
+    int schift = (int)test.exp - 1023; // где находится точка
+    printf("schift = %d\n", schift);  
+    printf("\n");
+    mymant += test.mant;
+
+    printf("integer binary : ");
+    printfBinary(cel(mymant, schift), schift + 1);
+    printf("\n");
+
+    printf("integer binary  1088: ");
+    clear_1088(&r);
+    set_1088(&r, mymant);
+    printBinary_1088(&r, 53);
+
+    
+    //// несколько вариантов
+    
+    printf("integer binary : ");
+    clear_1088(&r);
+    set_1088(&r, mymant);
+    //// 1   сдвиг меньше 52 
+    if (schift )
+    
+    printf("\n");
+
+
+
+
+
+    
+
+    //printfBinary(cel(mymant, schift), schift + 1);
+    //printf("\n");
+
+    return 0;
+        //  unsigned long long *ptrint = (unsigned long long *)&test.fd;
 
   // вид в памяти
   printfBinary(test.k, sizeof(unsigned long long) * 8);
@@ -337,7 +250,7 @@ shift_left_1024(&r, 120);
 
 
   //сдвиг
-  int schift = test.exp - 1023;
+   schift =(int) test.exp - 1023;
   printf("schift = %d\n", schift);   
 
   // добавляем 1 к мантиссе
@@ -374,17 +287,4 @@ shift_left_1024(&r, 120);
  Variant(test.fd);
 }
 
-// Запуск программы: CTRL+F5 или меню "Отладка" > "Запуск без отладки"
-// Отладка программы: F5 или меню "Отладка" > "Запустить отладку"
 
-// Советы по началу работы
-//   1. В окне обозревателя решений можно добавлять файлы и управлять ими.
-//   2. В окне Team Explorer можно подключиться к системе управления версиями.
-//   3. В окне "Выходные данные" можно просматривать выходные данные сборки и
-//   другие сообщения.
-//   4. В окне "Список ошибок" можно просматривать ошибки.
-//   5. Последовательно выберите пункты меню "Проект" > "Добавить новый
-//   элемент", чтобы создать файлы кода, или "Проект" > "Добавить существующий
-//   элемент", чтобы добавить в проект существующие файлы кода.
-//   6. Чтобы снова открыть этот проект позже, выберите пункты меню "Файл" >
-//   "Открыть" > "Проект" и выберите SLN-файл.
