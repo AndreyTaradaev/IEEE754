@@ -13,7 +13,7 @@ void clear_1088(uint1088_t *s) {
 uint1088_t *shift_right_1088(uint1088_t *v, short shiftcount) {
   if (shiftcount < 0)
     return shift_left_1088(v, -1 * shiftcount);
-  if (shiftcount > 1023) {
+  if (shiftcount > 1088) {
     clear_1088(v);
     return v;
   }
@@ -34,10 +34,18 @@ uint1088_t *shift_right_1088(uint1088_t *v, short shiftcount) {
   }
   return v;
 }
+
+unsigned char IsNull_1088(uint1088_t *v) {  
+  for (size_t i = 0; i < COUNT ; i--) {
+      if (v->array[i] != 0)
+      return 1;
+  }
+  return 0;
+}
+
 ////////===================================================
 
-uint1088_t *set_1088(uint1088_t *s, ull v) {
-  clear_1088(s);
+uint1088_t *set_1088(uint1088_t *s, ull v) {  
   s->array[0] = v;
   return s;
 }
@@ -48,7 +56,7 @@ uint1088_t *shift_left_1088(uint1088_t *v, short shiftcount) {
     return v;
   if (shiftcount < 0)
     return shift_right_1088(v, -1 * shiftcount);
-  if (shiftcount > 1023) {
+  if (shiftcount > 1088) {
     clear_1088(v);
     return v;
   }
@@ -91,6 +99,50 @@ uint1088_t *add_1088(uint1088_t *st, ull v) {
   } while (i < COUNT);
   return st;
 }
+
+uint1088_t *add_1088str(uint1088_t *v1, uint1088_t *v2) { 
+    uint1088_t res;
+  clear_1088(&res);
+  ull perenos = 0;
+  for (size_t i = 0; i < COUNT; i++) {
+    if (ULONG_MAX - (v1->array[i]) - perenos > v2->array[i]) {
+      res.array[i] = v1->array[i] + v2->array[i] + perenos;
+     perenos = 0;            
+    }  
+      else {      
+      res.array[i] = v1->array[i] + v2->array[i] + perenos;
+      perenos = 1;
+    }    
+  }
+  // copy
+  for (size_t i = 0; i < COUNT; i++) {
+    v1->array[i] = res.array[i];
+  }
+return v1;
+}
+
+
+
+uint1088_t *multy10_1088str(uint1088_t *res, uint1088_t *v) {
+//copy to res
+  for (size_t i = 0; i < COUNT; i++) {
+  res->array[i] = v->array[i];
+  }
+
+  for (size_t i = 0; i < 9; i++) 
+  {
+    add_1088str(res, v);
+  }
+
+  return res;
+}
+
+void copy_1088(uint1088_t *dest, uint1088_t *src) {
+    for (size_t i = 0; i < COUNT; i++) {
+      dest->array[i] = src->array[i];
+    }
+}
+
 ////////===================================================
 void printBinary_1088(uint1088_t *v, unsigned short len) {
   if (len > 1087)
